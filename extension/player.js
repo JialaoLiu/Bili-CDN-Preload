@@ -167,6 +167,10 @@
   const WrappedXHR=globalThis.BiliCdnCachedXHR.createCachedXMLHttpRequest({NativeXHR,
     resolveCachedRequest({url,range}){const response=cached(match(url),range);return response?{cachedResponse:response}:null;}});
   if(WrappedXHR)globalThis.XMLHttpRequest=WrappedXHR;
+  function urgent(t,start,end){
+    const position=Number(video()?.currentTime)||0;
+    return t.index?.segments.some(s=>s.endTime>position && s.startTime<position+25 && s.start<=end && s.end>=start);
+  }
   async function obtain(t,start,end,controller,adaptive=false){
     let last;
     let available=routes(t),probeHost='';
@@ -183,8 +187,18 @@
     try{for(const url of available.slice(0,settings.strict?1:3)){
       if(controller.signal.aborted)throw new Error('已取消');
       const h=new URL(url).hostname, began=performance.now();
+      // Hand off a delayed imminent block in the SAME worker slot. Never race
+      // multiple full copies or abort the player's own network requests.
+      const attemptController=new AbortController();
+      const relayAbort=()=>attemptController.abort(controller.signal.reason);
+      controller.signal.addEventListener('abort',relayAbort,{once:true});
+      if(controller.signal.aborted)relayAbort();
+      let lastProgress=began;
+      const rescue=adaptive && !settings.strict ? setInterval(()=>{
+        if(urgent(t,start,end) && (performance.now()-lastProgress>=3000 || performance.now()-began>=6000))attemptController.abort('临近播放的数据块过慢，接力备用线路');
+      },250):null;
       try{
-        const data=await C.readRange(rawFetch,url,start,end,{signal:controller.signal,...(h===probeHost?{idleMs:3000,timeoutMs:6000}:{}),onProgress:n=>{downloaded+=n;}});
+        const data=await C.readRange(rawFetch,url,start,end,{signal:attemptController.signal,...(h===probeHost?{idleMs:3000,timeoutMs:6000}:{}),onProgress:n=>{lastProgress=performance.now();downloaded+=n;}});
         if(adaptive)t.adaptive.record(h,data.buffer.byteLength,performance.now()-began,Date.now());
         health.set(h,{mbps:data.buffer.byteLength*8/(performance.now()-began)/1000,until:0,error:''});
         t.error='';return data;
@@ -193,7 +207,7 @@
         t.adaptive.fail(h);
         health.set(h,{mbps:0,until:Date.now()+30000,error:e.message});
         t.error=h+'：'+e.message;
-      }
+      }finally{clearInterval(rescue);controller.signal.removeEventListener('abort',relayAbort);}
     }}finally{if(probeHost)probeBusy=false;}
     throw last||new Error('所有候选线路失败');
   }
@@ -230,14 +244,23 @@
   }
   function nextJob(t){
     const need=t.need;if(!need)return null;
-    for(let start=Math.floor(need.start/C.BLOCK)*C.BLOCK;start<=need.end;start+=C.BLOCK){
+    const position=Number(video()?.currentTime)||0;
+    const current=t.index.segments.find(s=>s.endTime>position);
+    const first=Math.floor(need.start/C.BLOCK)*C.BLOCK;
+    const anchor=Math.max(first,Math.floor((current?.start||need.start)/C.BLOCK)*C.BLOCK);
+    const starts=[];
+    for(let start=anchor;start<=need.end;start+=C.BLOCK)starts.push(start);
+    // A short video is still fully cached, but played portions no longer outrank
+    // the bytes needed immediately after a seek.
+    for(let start=first;start<anchor;start+=C.BLOCK)starts.push(start);
+    for(const start of starts){
       const end=Math.min(start+C.BLOCK-1,t.total-1);
       const id=t.path+'|'+start;
       if(t.cache.covers(start,end)||running.has(id)||(t.failures.get(start)||0)>Date.now())continue;
       const reserved=[...running.values()].reduce((sum,j)=>sum+j.end-j.start+1,0);
       if(memory()+reserved+end-start+1>maxMemory()){status='缓存达到内存上限；随播放释放后继续（可提高上限）';return null;}
       const seg=t.index.segments.find(s=>s.end>=start);
-      return {id,track:t,start,end,time:seg?.startTime||0};
+      return {id,track:t,start,end,time:seg?.startTime||0,priority:start<anchor?1:0};
     }
     return null;
   }
@@ -256,7 +279,7 @@
       if(!activeTracks().includes(job.track) || (need && !job.track.indexPending && (job.end<need.start-C.BLOCK || job.start>need.end+C.BLOCK)))job.controller.abort('跳转到新位置');
     }
     while(running.size<concurrency()){
-      const jobs=activeTracks().map(nextJob).filter(Boolean).sort((a,b)=>a.time-b.time || (a.track.kind==='audio'?-1:1));
+      const jobs=activeTracks().map(nextJob).filter(Boolean).sort((a,b)=>a.priority-b.priority || a.time-b.time || (a.track.kind==='audio'?-1:1));
       if(!jobs.length)break;
       const job=jobs[0],g=generation;
       job.controller=new AbortController();running.set(job.id,job);
@@ -367,7 +390,7 @@
       #badge{display:block;margin-left:auto;background:#fff;color:#b23b66;border:1px solid #f6ccdb;border-radius:999px;padding:10px 16px;box-shadow:0 4px 18px #23263a1c}#toggle,#apply{background:#fb7299;color:white}#toggle:hover,#apply:hover{background:#ec608a}
       #summary{background:#f1f4f9;color:#46536b;padding:12px;border-radius:11px;font-variant-numeric:tabular-nums;line-height:1.9}.actions{gap:6px}details{border-color:#e8eaf0;margin-top:15px}summary{color:#505c72;font-weight:600;padding:4px 0}select,textarea{background:#fff;color:#374159;border:1px solid #dce1ea;border-radius:8px}textarea{resize:vertical}label{color:#626d80;font-size:12px}#errors{color:#ad4c2f}.result{border-color:#e8eaf0;color:#58647a}
     </style>
-    <section id="panel" aria-label="五分钟缓存控制面板"><div class="heading"><span class="mark">↓</span><div><h3>Bili CDN &amp; Preload</h3><small>Adaptive CDN &amp; Video Caching · 1.0.6</small></div><button id="close" aria-label="收起面板">×</button></div><p id="status"></p><p class="muted">短视频整段缓存 · 长视频提前 5 分钟<br>暂停播放，也会继续预加载。</p>
+    <section id="panel" aria-label="五分钟缓存控制面板"><div class="heading"><span class="mark">↓</span><div><h3>Bili CDN &amp; Preload</h3><small>Adaptive CDN &amp; Video Caching · 1.0.7</small></div><button id="close" aria-label="收起面板">×</button></div><p id="status"></p><p class="muted">短视频整段缓存 · 长视频提前 5 分钟<br>暂停播放，也会继续预加载。</p>
     <p>视频 <span id="videoText" class="muted"></span></p><progress id="videoBar" max="100" value="0"></progress>
     <p>音频 <span id="audioText" class="muted"></span></p><progress id="audioBar" max="100" value="0"></progress>
     <p id="summary" class="muted"></p><div class="actions"><button id="toggle">暂停预加载</button><button id="scan">测试各线路</button></div>
