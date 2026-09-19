@@ -38,7 +38,7 @@ Windows 已实测；macOS 使用同一套跨平台扩展代码，尚未实机验
 node --test tests/core.test.cjs tests/adaptive.test.cjs
 ```
 
-遇到问题请[提交 Issue](https://github.com/JialaoLiu/Bili-CDN-Preload/issues)，附上浏览器、所在地区、视频画质及面板「复制诊断」的结果。分享前请检查诊断内容。
+遇到问题请[提交 Issue](https://github.com/JialaoLiu/Bili-CDN-Preload/issues)，附上浏览器、所在地区、视频链接、画质及缓存面板截图。
 
 ## 致谢
 

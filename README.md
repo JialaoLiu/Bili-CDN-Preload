@@ -38,7 +38,7 @@ No build step. Load `extension/` directly. Run tests with Node.js 20+:
 node --test tests/core.test.cjs tests/adaptive.test.cjs
 ```
 
-[Report an issue](https://github.com/JialaoLiu/Bili-CDN-Preload/issues) with your browser, region, video quality, and the panel's copied diagnostics. Review diagnostics before sharing.
+[Report an issue](https://github.com/JialaoLiu/Bili-CDN-Preload/issues) with your browser, region, video link, quality, and a screenshot of the cache panel.
 
 ## Credits
 

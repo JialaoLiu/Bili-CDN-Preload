@@ -299,11 +299,11 @@
     const hosts=[...new Set([...activeTracks().flatMap(t=>t.urls.map(x=>x.host)),...C.PRESETS,...settings.extras,settings.preferred].filter(Boolean))];
     if(list.dataset.values!==hosts.join('|')){const selected=list.dataset.values===undefined?settings.preferred:list.value;list.replaceChildren(...['',...hosts].map(h=>{const o=document.createElement('option');o.value=h;o.textContent=h||'自动选择（无固定首选）';return o;}));list.value=selected;list.dataset.values=hosts.join('|');}
   }
-  async function scan(onlyHK=false){
+  async function scan(){
     if(scanning){scanController?.abort('停止测速');return;}
     const t=active.video;if(!t?.total){ui.getElementById('results').textContent='请先播放视频，等待分片索引读取完成。';return;}
     scanning=true;scanController=new AbortController();ui.getElementById('scan').textContent='停止测速';ui.getElementById('results').replaceChildren();
-    const available=C.candidates(t.urls,[...C.PRESETS,...settings.extras],'',false).filter(url=>!onlyHK||new URL(url).hostname.startsWith('cn-hk-'));
+    const available=C.candidates(t.urls,[...C.PRESETS,...settings.extras],'',false);
     const g=generation;let i=0;
     async function worker(){
       while(i<available.length && g===generation && !scanController.signal.aborted){
@@ -367,10 +367,10 @@
       #badge{display:block;margin-left:auto;background:#fff;color:#b23b66;border:1px solid #f6ccdb;border-radius:999px;padding:10px 16px;box-shadow:0 4px 18px #23263a1c}#toggle,#apply{background:#fb7299;color:white}#toggle:hover,#apply:hover{background:#ec608a}
       #summary{background:#f1f4f9;color:#46536b;padding:12px;border-radius:11px;font-variant-numeric:tabular-nums;line-height:1.9}.actions{gap:6px}details{border-color:#e8eaf0;margin-top:15px}summary{color:#505c72;font-weight:600;padding:4px 0}select,textarea{background:#fff;color:#374159;border:1px solid #dce1ea;border-radius:8px}textarea{resize:vertical}label{color:#626d80;font-size:12px}#errors{color:#ad4c2f}.result{border-color:#e8eaf0;color:#58647a}
     </style>
-    <section id="panel" aria-label="五分钟缓存控制面板"><div class="heading"><span class="mark">↓</span><div><h3>Bili CDN &amp; Preload</h3><small>Adaptive CDN &amp; Video Caching · 1.0.5</small></div><button id="close" aria-label="收起面板">×</button></div><p id="status"></p><p class="muted">短视频整段缓存 · 长视频提前 5 分钟<br>暂停播放，也会继续预加载。</p>
+    <section id="panel" aria-label="五分钟缓存控制面板"><div class="heading"><span class="mark">↓</span><div><h3>Bili CDN &amp; Preload</h3><small>Adaptive CDN &amp; Video Caching · 1.0.6</small></div><button id="close" aria-label="收起面板">×</button></div><p id="status"></p><p class="muted">短视频整段缓存 · 长视频提前 5 分钟<br>暂停播放，也会继续预加载。</p>
     <p>视频 <span id="videoText" class="muted"></span></p><progress id="videoBar" max="100" value="0"></progress>
     <p>音频 <span id="audioText" class="muted"></span></p><progress id="audioBar" max="100" value="0"></progress>
-    <p id="summary" class="muted"></p><div class="actions"><button id="toggle">暂停预加载</button><button id="scan">测试各线路</button><button id="scanHK">只测香港</button></div>
+    <p id="summary" class="muted"></p><div class="actions"><button id="toggle">暂停预加载</button><button id="scan">测试各线路</button></div>
     <p id="adaptive" class="muted" style="overflow-wrap:anywhere;white-space:pre-line"></p>
     <details><summary>下载与线路设置</summary><label>首选 CDN</label><select id="host" style="width:100%;margin-top:7px"></select>
     <label><span>只使用指定线路</span><input id="strict" type="checkbox"></label>
@@ -378,7 +378,7 @@
     <label>缓存内存上限<select id="memory"><option value="256">256 MB</option><option value="512">512 MB</option><option value="1024">1 GB</option><option value="2048">2 GB</option></select></label>
     <p class="muted" id="saved" aria-live="polite">并行数与内存上限选完即保存，下次自动沿用。</p>
     <label>批量自定义 CDN（每行一个）</label><textarea id="extras" placeholder="cn-hk-eq-01-04.bilivideo.com"></textarea>
-    <div class="actions"><button id="apply">应用设置</button><button id="diagnostics">复制诊断</button></div>
+    <div class="actions"><button id="apply">应用设置</button></div>
     <p class="muted">内置 13 个香港 EQ 与 2 个旧 bcache 域名，实际可用性以测试为准。测速是两处完整小块的抽样，不能当作持续速度。上方实时速度仅统计预取下载；预取完成后变为 0 属正常。</p>
     <p class="muted">原生播放器灰条只反映已送入播放器的数据，请看上方真实缓存进度与播放器命中计数。</p></details>
     <p id="errors"></p><div id="results"></div></section><button id="badge">Bili CDN &amp; Preload</button>`;
@@ -400,12 +400,7 @@
     document.addEventListener('pointerdown',event=>{if(!event.composedPath().includes(container))closePanel();},true);
     document.addEventListener('keydown',event=>{if(event.key==='Escape')closePanel();},true);
     ui.getElementById('toggle').onclick=()=>{settings.enabled=!settings.enabled;save();if(!settings.enabled)for(const job of running.values())job.controller.abort('暂停预取');schedule();};
-    ui.getElementById('apply').onclick=applySettings;ui.getElementById('scan').onclick=()=>scan(false);ui.getElementById('scanHK').onclick=()=>scan(true);
-    ui.getElementById('diagnostics').onclick=async()=>{
-      const report={version:'1.0.5',settings,status,hits,hitBytes,bytes:memory(),discovery:{payloads,knownTracks:tracks.size,contentKey:pageKey,knownFiles:[...tracks.keys()].map(p=>p.split('/').pop()),observedMedia:observed.size,unmatched:[...observed.values()].filter(x=>!match(x.url,false)).map(x=>({host:new URL(x.url).hostname,file:new URL(x.url).pathname.split('/').pop()}))},tracks:activeTracks().map(t=>({kind:t.kind,codec:t.codec,id:t.id,total:t.total,indexSegments:t.index?.segments.length||0,cache:stats(t),error:t.error,hosts:t.urls.map(x=>x.host)})),health:Object.fromEntries(health)};
-      report.selection=activeTracks().map(t=>({kind:t.kind,host:t.adaptive.champion,risk:t.adaptive.risk,reason:t.adaptive.reason,samples:Object.fromEntries(t.adaptive.samples)}));
-      try{await navigator.clipboard.writeText(JSON.stringify(report,null,2));ui.getElementById('diagnostics').textContent='已复制';}catch{ui.getElementById('errors').textContent='剪贴板不可用';}
-    };
+    ui.getElementById('apply').onclick=applySettings;ui.getElementById('scan').onclick=()=>scan();
     const syncFullscreen=()=>{closePanel();container.style.display=document.fullscreenElement?'none':'';};
     document.addEventListener('fullscreenchange',syncFullscreen);syncFullscreen();render();
   }

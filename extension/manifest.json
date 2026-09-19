@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Bili CDN & Preload",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "面向海外留学生、海外工作者及华侨华人的 Bilibili 播放优化扩展：主动 CDN 优选、音视频并行预加载与持续缓存。",
   "minimum_chrome_version": "111",
   "content_scripts": [{
