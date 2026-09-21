@@ -4,11 +4,15 @@
   "version": "1.0.7",
   "description": "面向海外留学生、海外工作者及华侨华人的 Bilibili 播放优化扩展：主动 CDN 优选、音视频并行预加载与持续缓存。",
   "minimum_chrome_version": "111",
+  "icons": {"16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png"},
   "content_scripts": [{
     "matches": ["https://www.bilibili.com/*"],
     "js": ["vendor/core.js", "vendor/cached-xhr.js", "buffer-core.js", "adaptive.js", "player.js"],
     "run_at": "document_start",
     "world": "MAIN"
   }],
-  "action": {"default_title": "Bili CDN & Preload — 打开 B 站视频，点击右下角同名按钮"}
+  "action": {
+    "default_title": "Bili CDN & Preload — 打开 B 站视频，点击右下角同名按钮",
+    "default_icon": {"16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png"}
+  }
 }
