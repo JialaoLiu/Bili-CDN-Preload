@@ -24,7 +24,7 @@ To update, replace the files, reload the extension, and refresh Bilibili. No aut
 
 ## Compatibility & privacy
 
-Windows tested; macOS uses the same platform-independent extension package but has not been tested on a Mac. Use a current Chrome or Edge release.
+Windows tested; macOS verified through user testing. Both platforms use the same extension package. Use a current Chrome or Edge release.
 
 Designed for desktop Bilibili DASH videos. Playback still depends on available CDN bandwidth and your account's access. No VPN or region unlocking.
 
