@@ -1,4 +1,7 @@
-# v1.0.8 beta (source trial, not released)
+# v1.0.8 beta (prerelease)
+
+- beta.7: English / Simplified Chinese panel with an autosaved **EN / 中** switch. Translates settings, live status, scan results, validation messages and accessibility labels without restarting downloads. Bilingual release notes and installation instructions.
+- beta.7：新增 **EN / 中** 切换，语言自动保存；设置、实时状态、测速结果、错误提示与无障碍标签支持中英双语，切换不重启下载；补充双语发布与安装说明。
 
 - beta.6: preload duration changes no longer abort in-flight work or evict downloaded future bytes; range-based cancellation now requires an actual seek. Disabling preload stops new scheduling while existing chunks finish. Regression checks shrink, disable and expand without re-downloading cached data.
 - beta.5: continuous preload slider movement with nearest-30-second snapping on release; dragging only previews, without saving settings or cancelling downloads. Unchanged values do not restart work; arrow keys move one full step.

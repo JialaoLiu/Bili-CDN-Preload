@@ -5,10 +5,11 @@
   const C=globalThis.BiliBufferCore, parser=globalThis.BiliCdnCore;
   const rawFetch=globalThis.fetch.bind(globalThis), NativeXHR=globalThis.XMLHttpRequest;
   const key='bili-buffer-five-min-v1';
-  const defaults={enabled:true,seconds:300,concurrency:6,memory:1024,preferred:'',strict:false,extras:[],region:'auto',parallelPlayback:false};
+  const defaults={enabled:true,seconds:300,concurrency:6,memory:1024,preferred:'',strict:false,extras:[],region:'auto',parallelPlayback:false,language:'zh'};
   let settings;
   try {settings={...defaults,...JSON.parse(localStorage.getItem(key)||'{}')};} catch {settings={...defaults};}
   settings.seconds=Number.isFinite(Number(settings.seconds))?Math.max(0,Math.min(300,Math.round(Number(settings.seconds)/30)*30)):300;
+  settings.language=settings.language==='en'?'en':'zh';
   const cdnFailures=new Map();let recoveryAt=0,recoveryTurn=0;
   const tracks=new Map(), active={video:null,audio:null}, running=new Map(), health=new Map();
   const observed=new Map();
@@ -567,9 +568,10 @@
       #badge{display:block;margin-left:auto;background:#fff;color:#b23b66;border:1px solid #f6ccdb;border-radius:999px;padding:10px 16px;box-shadow:0 4px 18px #23263a1c}#toggle{background:#fb7299;color:white}#toggle:hover{background:#ec608a}
       #summary{background:#f1f4f9;color:#46536b;padding:12px;border-radius:11px;font-variant-numeric:tabular-nums;line-height:1.9}.actions{gap:6px}details{border-color:#e8eaf0;margin-top:15px}summary{color:#505c72;font-weight:600;padding:4px 0}select,textarea{background:#fff;color:#374159;border:1px solid #dce1ea;border-radius:8px}textarea{resize:vertical}label{color:#626d80;font-size:12px}#errors{color:#ad4c2f}.result{border-color:#e8eaf0;color:#58647a}
       #errors:empty,#adaptive:empty,#saved:empty{display:none}
+      .heading>div{flex:1;min-width:0}.heading .mark{flex-shrink:0}.heading h3{font-size:16px}.heading small{display:block;font-size:10px;line-height:1.4}.heading #close{margin-left:0}.heading #language{flex-shrink:0;padding:6px;font-size:11px;white-space:nowrap;font-weight:400}#language[data-language="en"] .lang-en,#language[data-language="zh"] .lang-zh{color:#b23b66;font-weight:700}label>select{min-width:0;max-width:65%}
       #preloadSeconds{width:100%;margin:10px 0 0;accent-color:#fb7299;cursor:pointer}#preloadSeconds:focus-visible{outline:2px solid #da477b;outline-offset:3px}.rangeEnds{display:flex;justify-content:space-between;font-size:11px;color:#777d90;margin-top:3px}
     </style>
-    <section id="panel" aria-label="五分钟缓存控制面板"><div class="heading"><span class="mark">↓</span><div><h3>Bili CDN &amp; Preload</h3><small>Adaptive CDN &amp; Video Caching · 1.0.8 beta.6</small></div><button id="close" aria-label="收起面板">×</button></div><p id="status"></p>
+    <section id="panel" aria-label="五分钟缓存控制面板"><div class="heading"><span class="mark">↓</span><div><h3>Bili CDN &amp; Preload</h3><small>Adaptive CDN &amp; Video Caching · 1.0.8 beta.7</small></div><button id="language" type="button" data-i18n-skip><span class="lang-en">EN</span> / <span class="lang-zh">中</span></button><button id="close" aria-label="收起面板">×</button></div><p id="status"></p>
     <p>视频 <span id="videoText" class="muted"></span></p><progress id="videoBar" max="100" value="0"></progress>
     <p>音频 <span id="audioText" class="muted"></span></p><progress id="audioBar" max="100" value="0"></progress>
     <p id="summary" class="muted"></p><div class="actions"><button id="toggle">暂停预加载</button><button id="scan">测试各线路</button></div>
@@ -583,6 +585,15 @@
     <p class="muted" id="saved" aria-live="polite"></p><label>额外 CDN 候选（每行一个）</label><textarea id="extras" placeholder="cn-hk-eq-01-04.bilivideo.com"></textarea></details>
     <p id="errors"></p><div id="results"></div></section><button id="badge">Bili CDN &amp; Preload</button>`;
     document.body.append(container);
+    const localize=globalThis.BiliBufferI18n.attach(ui,()=>settings.language);
+    const languageButton=ui.getElementById('language');
+    const showLanguage=()=>{languageButton.dataset.language=settings.language;languageButton.setAttribute('aria-label',settings.language==='en'?'切换为中文':'Switch to English');};
+    showLanguage();
+    languageButton.onclick=()=>{
+      settings.language=settings.language==='en'?'zh':'en';showLanguage();
+      try{save();ui.getElementById('saved').textContent='已保存 · 刷新或换视频后继续沿用';}catch{ui.getElementById('saved').textContent='本次已生效，但无法保存设置';}
+      localize();
+    };
     ui.getElementById('host').value=settings.preferred;ui.getElementById('strict').checked=settings.strict;
     ui.getElementById('region').value=settings.region;
     const slider=ui.getElementById('preloadSeconds');slider.value=settings.seconds;

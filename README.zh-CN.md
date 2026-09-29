@@ -6,7 +6,8 @@
 
 ## 功能
 
-- **提前缓存：**五分钟以内的视频缓存整段，长视频缓存当前位置之后五分钟。
+- **提前缓存：**从 B 站默认缓冲到提前五分钟可调，默认五分钟。
+- **中英双语：**点击面板右上角 **EN / 中** 切换，语言选择自动保存。
 - **主动选线：**缓存余量不足或增长偏慢时，提前试探其它 CDN，不等卡住才处理。
 - **并行下载：**音视频分别缓存，并行数和内存上限可调，选完自动保存。
 - **真实进度：**显示实际下载速度、连续缓存范围和播放器缓存命中。
@@ -15,9 +16,11 @@
 
 **[下载最新版本](https://github.com/JialaoLiu/Bili-CDN-Preload/releases/latest)** — Windows/macOS 的 Chrome、Edge 使用同一个 ZIP。
 
+**[体验 v1.0.8 beta.7](https://github.com/JialaoLiu/Bili-CDN-Preload/releases/tag/v1.0.8-beta.7)**：双语面板、可调预加载与共享下载。
+
 1. 解压 ZIP，保留解压后的文件夹。
 2. 打开 `chrome://extensions` 或 `edge://extensions`，开启「开发者模式」。
-3. 点击「加载已解压的扩展」，选择其中的 `extension` 文件夹。
+3. 点击「加载已解压的扩展」，选择直接包含 `manifest.json` 的文件夹。
 4. 停用有冲突的 B 站 CDN 脚本或扩展，刷新视频，点击右下角 **Bili CDN & Preload**。
 
 更新时替换文件、重新加载扩展，再刷新 B 站页面。暂不支持自动更新。
@@ -28,14 +31,14 @@ Windows 已实测，macOS 已通过用户实测验证，两个平台使用同一
 
 适用于桌面 B 站 DASH 点播，实际效果取决于 CDN 带宽与账号访问权限。不是 VPN，也不提供地区解锁。
 
-无遥测、无远端后台。设置保存在 localStorage，视频缓存保存在页面内存中，刷新即清除。默认缓存预算为 1 GiB。
+无遥测、无远端后台。设置保存在 localStorage。测试版使用页面内存和本地 IndexedDB 缓存（最多 128 MiB、30 分钟过期）恢复刷新前的数据，默认内存预算为 1 GiB。
 
 ## 开发与反馈
 
 无需构建，直接加载 `extension/`。Node.js 20+ 可运行测试：
 
 ```sh
-node --test tests/core.test.cjs tests/adaptive.test.cjs
+node --test tests/core.test.cjs tests/adaptive.test.cjs tests/i18n.test.cjs
 ```
 
 遇到问题请[提交 Issue](https://github.com/JialaoLiu/Bili-CDN-Preload/issues)，附上浏览器、所在地区、视频链接、画质及缓存面板截图。
