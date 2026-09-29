@@ -1,3 +1,18 @@
+# v1.0.8 beta (source trial, not released)
+
+- beta.6: preload duration changes no longer abort in-flight work or evict downloaded future bytes; range-based cancellation now requires an actual seek. Disabling preload stops new scheduling while existing chunks finish. Regression checks shrink, disable and expand without re-downloading cached data.
+- beta.5: continuous preload slider movement with nearest-30-second snapping on release; dragging only previews, without saving settings or cancelling downloads. Unchanged values do not restart work; arrow keys move one full step.
+- beta.4: add an autosaved 0–300 second preload slider (30-second steps, default 300); zero disables proactive fetching but retains native/player-request downloads. Split playback/prefetch scheduling with a shared concurrency ceiling and lend idle slots; use 512 KiB pieces. Fresh installs default to six transfers; existing user concurrency settings are preserved. Two consecutive CDN failures quarantine that host for the current video session; cancellation is excluded, and all-host failure allows one recovery attempt per minute. Strict-host mode remains strict.
+- beta.3: include sub-256-KiB player ranges in the shared queue. Live beta.2 testing of BV1Ysht6UEXe exposed audio-sized requests bypassing deduplication; the new simulated Fetch/XHR overlap test also includes a 100,000-byte request. beta.3 live verification remains pending extension reload.
+- beta.2: share in-flight byte intervals between prefetch and parallel Fetch/XHR; reuse cached subranges, preserve completed pieces immediately, and share one bounded transfer queue. Cancelling one consumer does not cancel another consumer's shared download.
+- Reduce manual scan samples from 2 MiB to at most 128 KiB per CDN. These are small-sample estimates, not sustained-speed guarantees.
+- Resume validated partial Range bodies across CDN retries; prefetch schedules cache holes instead of downloading cached parts again. Skip cooling-down CDNs during failover and cancel stalled response readers.
+- Regression coverage includes failed-fetch failover, partial-body continuation, mismatched file totals, scan traffic, near-playback rescue and repeated refresh recovery. These are simulated tests, not authenticated live playback measurements.
+- Keep the five-minute preload; add an opt-in, bounded multi-Range path for uncached player Fetch/XHR requests. Reassemble only verified byte ranges and fall back to the native request on failure.
+- Add mainland CDN candidates and Auto / Overseas-first / Mainland-first selection. Availability still depends on each video's signed URL and CORS response.
+- The multi-Range approach was informed by [Bilibili-thread-ripper](https://github.com/MrTangLuyao/Bilibili-thread-ripper); this implementation is separate and does not import its code.
+- Mocked Chrome checks cover parallel Fetch/XHR, native fallback, aborted XHR, and existing preload behavior. Real authenticated playback remains to be validated.
+
 # v1.0.7
 
 - 新增粉色猫头小电视 Logo，适配扩展列表及工具栏的 16/32/48/128 像素图标。

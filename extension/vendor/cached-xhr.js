@@ -31,6 +31,7 @@
         this._method = "GET";
         this._mimeType = "";
         this._openRest = [];
+        this._pendingController = null;
         this._readyState = 0;
         this._requestToken = 0;
         this._responseType = "";
@@ -84,6 +85,8 @@
 
       open(method, url, ...rest) {
         if (this._sent && !this._settled) this.abort();
+        this._pendingController?.abort();
+        this._pendingController = null;
         this._requestToken += 1;
         this._aborted = false;
         this._async = rest[0] !== false;
@@ -201,10 +204,12 @@
         const token = this._requestToken;
         Promise.resolve(plan.pendingResponse).then((resolved) => {
           if (this._settled || this._aborted || token !== this._requestToken) return;
+          this._pendingController = null;
           if (resolved?.cachedResponse && this._sendSynthetic(resolved, range)) return;
           this._sendNetwork(body);
         }).catch(() => {
           if (this._settled || this._aborted || token !== this._requestToken) return;
+          this._pendingController = null;
           this._sendNetwork(body);
         });
         return true;
@@ -217,12 +222,15 @@
         let plan = null;
         if (this._async && this._method.toUpperCase() === "GET" && range && this._responseType === "arraybuffer") {
           try {
+            this._pendingController = new AbortController();
             plan = resolveCachedRequest({
               headers: [...this._headers],
               method: this._method,
               range,
               responseType: this._responseType,
-              url: this._url
+              url: this._url,
+              withCredentials: this._withCredentials,
+              signal: this._pendingController.signal
             });
           } catch {
             plan = null;
@@ -230,6 +238,7 @@
         }
         if (plan?.cachedResponse && this._sendSynthetic(plan, range)) return;
         if (plan?.pendingResponse && this._waitForPending(plan, range, body)) return;
+        this._pendingController = null;
         this._sendNetwork(body);
       }
 
@@ -238,6 +247,8 @@
         this._aborted = true;
         this._settled = true;
         this._requestToken += 1;
+        this._pendingController?.abort();
+        this._pendingController = null;
         if (this._inner) {
           try { rawAbort.call(this._inner); } catch {}
         } else {
