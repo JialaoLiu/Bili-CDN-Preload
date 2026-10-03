@@ -1,0 +1,62 @@
+const {chromium}=require(process.env.BILI_PLAYWRIGHT_MODULE||'playwright');
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const root=path.resolve(process.env.BILI_TEST_EXTENSION||path.join(__dirname,'../extension'));
+const scripts=['vendor/cached-xhr.js','buffer-core.js','i18n.js','live-core.js','live-player.js'];
+const body=Buffer.alloc(4096,7);body.writeUInt32BE(4096);body.write('styp',4);
+const url='https://d1--cn-gotcha204.bilivideo.com/live-bvc/fixture/index.m3u8?token=abc';
+const segment=url.replace('index.m3u8','10.m4s');
+let sequence=10,encrypted=false;
+const playlist=()=>`#EXTM3U\n#EXT-X-MAP:URI="init.mp4"\n${encrypted?'#EXT-X-KEY:METHOD=AES-128,URI="key"\n':''}#EXTINF:1,\n${sequence}.m4s\n#EXTINF:1,\n${sequence+1}.m4s`;
+(async()=>{
+  const browser=await chromium.launch({executablePath:process.env.BILI_CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true});
+  try{
+    const context=await browser.newContext({viewport:{width:1200,height:900}}),requests=[],errors=[];
+    await context.route('**/*',async route=>{
+      const request=route.request(),u=new URL(request.url());
+      if(u.hostname==='live.bilibili.com')return route.fulfill({contentType:'text/html; charset=utf-8',body:'<!doctype html><meta charset="utf-8"><h1>本地直播测试 / Live fixture</h1><video></video>'});
+      if(!u.hostname.endsWith('.bilivideo.com'))return route.abort();
+      if(request.method()==='OPTIONS')return route.fulfill({status:204,headers:{'access-control-allow-origin':'*','access-control-allow-headers':'range'}});
+      const headers={'access-control-allow-origin':'*','access-control-expose-headers':'content-range,content-length'};
+      requests.push({path:u.pathname,range:request.headers().range||'',host:u.hostname});
+      if(u.pathname.endsWith('.m3u8'))return route.fulfill({contentType:'application/vnd.apple.mpegurl',headers,body:playlist()});
+      if(u.pathname.endsWith('.flv'))return route.fulfill({headers,body:'FLV native passthrough'});
+      if(u.searchParams.get('token')!=='abc')return route.fulfill({status:403,headers,body:'missing signature'});
+      await new Promise(r=>setTimeout(r,15));
+      const range=/bytes=(\d+)-(\d+)/.exec(request.headers().range||'');
+      if(range)return route.fulfill({status:206,headers:{...headers,'content-type':'video/mp4','content-range':`bytes ${range[1]}-${range[2]}/${body.length}`},body:body.subarray(+range[1],+range[2]+1)});
+      return route.fulfill({status:200,headers:{...headers,'content-type':'video/mp4'},body});
+    });
+    await context.addInitScript({content:scripts.map(s=>fs.readFileSync(path.join(root,s),'utf8')).join('\n;\n')});
+    const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
+    await page.goto('https://live.bilibili.com/123');
+    await page.evaluate(url=>fetch(url).then(r=>r.text()),url);
+    await page.waitForFunction(()=>document.querySelector('#bili-buffer-live')?.shadowRoot.getElementById('liveStats').textContent.includes('3 个分片'));
+    const full=()=>requests.filter(r=>!r.range&&/\.(mp4|m4s)$/.test(r.path));
+    assert.equal(full().length,3);
+    const served=await page.evaluate(async url=>{
+      const request=()=>fetch(url).then(async r=>({status:r.status,bytes:(await r.arrayBuffer()).byteLength,url:r.url}));
+      const xhr=new Promise((resolve,reject)=>{const x=new XMLHttpRequest();x.open('GET',url);x.responseType='arraybuffer';x.onload=()=>resolve({status:x.status,bytes:x.response.byteLength});x.onerror=reject;x.send();});
+      return Promise.all([request(),request(),xhr]);
+    },segment);
+    assert(served.every(r=>r.status===200&&r.bytes===4096));assert.equal(full().length,3,'Fetch/XHR must reuse prefetched segments');
+    await page.locator('#liveBadge').click();await page.locator('#liveLanguage').click();
+    await page.waitForFunction(()=>document.querySelector('#bili-buffer-live').lang==='en');
+    assert.match(await page.locator('#liveStatus').textContent(),/Live segment acceleration/);
+    await page.screenshot({path:path.resolve(__dirname,'../../../outputs/bili-live-en.png')});
+    await page.locator('#livePrefetch').uncheck();sequence=12;
+    await page.evaluate(url=>fetch(url).then(r=>r.text()),url);await page.waitForTimeout(300);
+    assert.equal(full().length,3,'prefetch off must not download announced new media');
+    const onDemand=await page.evaluate(url=>fetch(url.replace('10.m4s','12.m4s')).then(r=>r.arrayBuffer()).then(b=>b.byteLength),segment);
+    assert.equal(onDemand,4096);assert.equal(full().length,4);
+    const rangeResult=await page.evaluate(url=>fetch(url,{headers:{Range:'bytes=0-99'}}).then(async r=>({status:r.status,bytes:(await r.arrayBuffer()).byteLength})),segment);
+    assert.deepEqual(rangeResult,{status:206,bytes:100});
+    encrypted=true;await page.evaluate(url=>fetch(url).then(r=>r.text()),url);await page.waitForTimeout(100);
+    await page.evaluate(url=>fetch(url).then(r=>r.arrayBuffer()),segment);assert.equal(full().length,5,'encrypted playlist must stay native');
+    assert.equal(await page.evaluate(url=>fetch(url.replace('10.m4s','stream.flv')).then(r=>r.text()),segment),'FLV native passthrough');
+    await page.locator('#liveEnabled').uncheck();await page.reload();
+    await page.waitForFunction(()=>document.querySelector('#bili-buffer-live').shadowRoot.getElementById('liveStatus').textContent==='Live acceleration off');
+    assert.equal(await page.evaluate(()=>new PCDNLoader().constructor.name).catch(()=> 'native'),'native');
+    assert.deepEqual(errors,[]);
+    console.log(JSON.stringify({liveBrowser:'PASS',sharedFetchXHR:true,rangePassthrough:true,encryptedPassthrough:true,flvPassthrough:true,prefetchToggle:true,persistedLanguage:true,persistedDisable:true,errors}));
+  }finally{await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

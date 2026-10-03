@@ -9,7 +9,7 @@
 - **提前缓存：**从 B 站默认缓冲到提前五分钟可调，默认五分钟。
 - **中英双语：**点击面板右上角 **EN / 中** 切换，语言选择自动保存。
 - **主动选线：**缓存余量不足或增长偏慢时，提前试探其它 CDN，不等卡住才处理。
-- **并行下载：**音视频分别缓存，并行数和内存上限可调，选完自动保存。
+- **并行下载：**点播总并发可选 3 / 6 / 8 / 12，默认 6；播放请求并行默认开启，线路默认大陆优先，设置自动保存。
 - **真实进度：**显示实际下载速度、连续缓存范围和播放器缓存命中。
 
 ## 安装
@@ -35,10 +35,16 @@ Windows 已实测，macOS 已通过用户实测验证，两个平台使用同一
 
 ## 开发与反馈
 
+### 直播源码测试版（v1.0.9 beta.3）
+
+源码新增 `live.bilibili.com` 独立模块：对已识别的 fMP4 HLS 直播预取已生成的分片，Fetch/XHR 共用缓存，慢请求有限尝试备用 CDN，并可选择避开已知 P2P SDK。保留 B 站原生播放器和弹幕。直播不能下载主播尚未播出的内容，不使用点播的五分钟滑条。
+
+FLV、加密、字节范围、未识别及仅在 Worker 中发出的流不接管。Windows Edge 实测确认 2～3 位观众的直播间已有缓存命中，但仍有低缓冲和重复分片请求；点播也已验证实际 HDR/HEVC 播放。这些有限测试尚不能证明 8、12 并发的性能。设计和候选节点参考 [Bilibili-thread-ripper](https://github.com/MrTangLuyao/Bilibili-thread-ripper)。上面的 beta.7 Release 尚不包含直播模块。
+
 无需构建，直接加载 `extension/`。Node.js 20+ 可运行测试：
 
 ```sh
-node --test tests/core.test.cjs tests/adaptive.test.cjs tests/i18n.test.cjs
+node --test tests/core.test.cjs tests/adaptive.test.cjs tests/i18n.test.cjs tests/live.test.cjs
 ```
 
 遇到问题请[提交 Issue](https://github.com/JialaoLiu/Bili-CDN-Preload/issues)，附上浏览器、所在地区、视频链接、画质及缓存面板截图。

@@ -5,11 +5,14 @@
   const C=globalThis.BiliBufferCore, parser=globalThis.BiliCdnCore;
   const rawFetch=globalThis.fetch.bind(globalThis), NativeXHR=globalThis.XMLHttpRequest;
   const key='bili-buffer-five-min-v1';
-  const defaults={enabled:true,seconds:300,concurrency:6,memory:1024,preferred:'',strict:false,extras:[],region:'auto',parallelPlayback:false,language:'zh'};
+  const defaults={enabled:true,seconds:300,concurrency:6,memory:1024,preferred:'',strict:false,extras:[],region:'mainland',parallelPlayback:true,language:'zh'};
   let settings;
   try {settings={...defaults,...JSON.parse(localStorage.getItem(key)||'{}')};} catch {settings={...defaults};}
   settings.seconds=Number.isFinite(Number(settings.seconds))?Math.max(0,Math.min(300,Math.round(Number(settings.seconds)/30)*30)):300;
   settings.language=settings.language==='en'?'en':'zh';
+  settings.concurrency=[3,6,8,12].includes(Number(settings.concurrency))?Number(settings.concurrency):6;
+  // Requested one-time default migration; later user changes stay saved.
+  if(settings.playbackDefaultsVersion!==1){settings.region='mainland';settings.parallelPlayback=true;settings.playbackDefaultsVersion=1;try{localStorage.setItem(key,JSON.stringify(settings));}catch{}}
   const cdnFailures=new Map();let recoveryAt=0,recoveryTurn=0;
   const tracks=new Map(), active={video:null,audio:null}, running=new Map(), health=new Map();
   const observed=new Map();
@@ -29,7 +32,7 @@
   const activeTracks=()=>[active.audio,active.video].filter(Boolean);
   const memory=()=>activeTracks().reduce((n,t)=>n+t.cache.bytes,0);
   const maxMemory=()=>Math.max(128,Math.min(2048,Number(settings.memory)||1024))*1024*1024;
-  const concurrency=()=>Math.max(1,Math.min(6,Number(settings.concurrency)||3));
+  const concurrency=()=>settings.concurrency;
   const mediaGate=new C.RequestGate(concurrency);
   function sharedRange(t,start,end,signal,kind='playback'){
     if(!t.pool)t.pool=new C.RangePool(t.cache,(a,b,sharedSignal,priority)=>mediaGate.run(async()=>{
@@ -154,7 +157,7 @@
       if(activate && active[t.kind]!==t){
         const previous=active[t.kind];
         if(previous)for(const job of running.values())if(job.track===previous)job.controller.abort('切换音轨或画质');
-        if(previous)previous.cache=new C.ByteCache();
+        if(previous){previous.cache=new C.ByteCache();previous.pool=null;}
         active[t.kind]=t;status='正在建立五分钟缓存';schedule();
       }
       if(activate)t.currentHost=u.hostname;
@@ -483,6 +486,10 @@
     if(!ui)return;
     const now=performance.now();if(now-lastAt>=1000){speed=(downloaded-lastBytes)*8/(now-lastAt)/1000;lastAt=now;lastBytes=downloaded;}
     ui.getElementById('status').textContent=status;
+    const current=active.video;
+    const quality=current?.id===125?'HDR 真彩':current?.id===126?'Dolby Vision':current?.height?`${current.height}p`:current?`ID ${current.id}`:'';
+    const codec=current?/^hvc|^hev/.test(current.codec)?'HEVC':/^av01/.test(current.codec)?'AV1':/^avc/.test(current.codec)?'AVC':current.codec:'';
+    ui.getElementById('trackInfo').textContent=current?`当前视频轨道：${quality} · ${codec}`:'';
     ui.getElementById('adaptive').textContent=settings.strict?'固定线路：不自动探测':activeTracks().map(t=>`${t.kind==='video'?'视频':'音频'}：${t.adaptive.reason}${t.adaptive.champion?' · '+t.adaptive.champion:''}`).join('\n');
     ui.getElementById('summary').textContent=`预缓存${settings.enabled?'已启用':'已暂停'} · ${(speed/8).toFixed(2)} MB/s (${speed.toFixed(1)} Mbps)\n缓存 ${(memory()/1048576).toFixed(0)} / ${settings.memory} MB · 命中 ${hits} 次 / ${(hitBytes/1048576).toFixed(1)} MB\n播放请求并行：${settings.parallelPlayback?'已勾选':'未勾选（预缓存不受影响）'}${playbackActive?' · 处理中 '+playbackActive:''} · 成功 ${parallelSuccess} / 回退 ${parallelFallback}`;
     for(const kind of ['video','audio']){const s=stats(active[kind]);ui.getElementById(kind+'Text').textContent=s.text;ui.getElementById(kind+'Bar').value=s.percent;}
@@ -567,19 +574,19 @@
       button{border:0;background:#f1f2f7;color:#48516a;border-radius:9px;font-weight:600;font-size:12px;padding:9px 11px}button:hover{background:#e8eaf2}button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #da477b;outline-offset:2px}
       #badge{display:block;margin-left:auto;background:#fff;color:#b23b66;border:1px solid #f6ccdb;border-radius:999px;padding:10px 16px;box-shadow:0 4px 18px #23263a1c}#toggle{background:#fb7299;color:white}#toggle:hover{background:#ec608a}
       #summary{background:#f1f4f9;color:#46536b;padding:12px;border-radius:11px;font-variant-numeric:tabular-nums;line-height:1.9}.actions{gap:6px}details{border-color:#e8eaf0;margin-top:15px}summary{color:#505c72;font-weight:600;padding:4px 0}select,textarea{background:#fff;color:#374159;border:1px solid #dce1ea;border-radius:8px}textarea{resize:vertical}label{color:#626d80;font-size:12px}#errors{color:#ad4c2f}.result{border-color:#e8eaf0;color:#58647a}
-      #errors:empty,#adaptive:empty,#saved:empty{display:none}
+      #errors:empty,#adaptive:empty,#saved:empty,#trackInfo:empty{display:none}
       .heading>div{flex:1;min-width:0}.heading .mark{flex-shrink:0}.heading h3{font-size:16px}.heading small{display:block;font-size:10px;line-height:1.4}.heading #close{margin-left:0}.heading #language{flex-shrink:0;padding:6px;font-size:11px;white-space:nowrap;font-weight:400}#language[data-language="en"] .lang-en,#language[data-language="zh"] .lang-zh{color:#b23b66;font-weight:700}label>select{min-width:0;max-width:65%}
       #preloadSeconds{width:100%;margin:10px 0 0;accent-color:#fb7299;cursor:pointer}#preloadSeconds:focus-visible{outline:2px solid #da477b;outline-offset:3px}.rangeEnds{display:flex;justify-content:space-between;font-size:11px;color:#777d90;margin-top:3px}
     </style>
-    <section id="panel" aria-label="五分钟缓存控制面板"><div class="heading"><span class="mark">↓</span><div><h3>Bili CDN &amp; Preload</h3><small>Adaptive CDN &amp; Video Caching · 1.0.8 beta.7</small></div><button id="language" type="button" data-i18n-skip><span class="lang-en">EN</span> / <span class="lang-zh">中</span></button><button id="close" aria-label="收起面板">×</button></div><p id="status"></p>
-    <p>视频 <span id="videoText" class="muted"></span></p><progress id="videoBar" max="100" value="0"></progress>
+    <section id="panel" aria-label="五分钟缓存控制面板"><div class="heading"><span class="mark">↓</span><div><h3>Bili CDN &amp; Preload</h3><small>Adaptive CDN &amp; Video Caching · 1.0.9 beta.3</small></div><button id="language" type="button" data-i18n-skip><span class="lang-en">EN</span> / <span class="lang-zh">中</span></button><button id="close" aria-label="收起面板">×</button></div><p id="status"></p>
+    <p id="trackInfo" class="muted"></p><p>视频 <span id="videoText" class="muted"></span></p><progress id="videoBar" max="100" value="0"></progress>
     <p>音频 <span id="audioText" class="muted"></span></p><progress id="audioBar" max="100" value="0"></progress>
     <p id="summary" class="muted"></p><div class="actions"><button id="toggle">暂停预加载</button><button id="scan">测试各线路</button></div>
     <label for="preloadSeconds">提前预加载<output id="preloadValue" for="preloadSeconds"></output></label><input id="preloadSeconds" type="range" min="0" max="300" step="any" aria-describedby="preloadHint"><div class="rangeEnds"><span>B 站默认</span><span>5 分钟</span></div><p id="preloadHint" class="muted">松手吸附到最近的 30 秒档位；最左侧沿用 B 站自身缓冲。</p>
     <p id="adaptive" class="muted" style="overflow-wrap:anywhere;white-space:pre-line"></p>
     <details id="settings"><summary>下载与线路设置</summary><label>线路范围<select id="region"><option value="auto">自动（海外＋大陆）</option><option value="overseas">海外优先</option><option value="mainland">大陆优先</option></select></label><label>首选 CDN<select id="host"></select></label>
     <label><span>仅用首选 CDN（失败不换线）</span><input id="strict" type="checkbox"></label>
-    <label>总下载并发上限<select id="concurrency"><option>1</option><option>2</option><option>3</option><option>4</option><option>6</option></select></label><p class="muted">播放优先、预取保留名额；空闲名额可借用，共享数据不重复下载。</p>
+    <label>总下载并发上限<select id="concurrency"><option>3</option><option>6</option><option>8</option><option>12</option></select></label><p class="muted">播放优先、预取保留名额；空闲名额可借用，共享数据不重复下载。</p>
     <label><span>播放请求并行下载（可选）</span><input id="parallelPlayback" type="checkbox"></label>
     <label title="浏览器临时缓存，不会预占上限或离线保存">预缓存内存上限<select id="memory"><option value="256">256 MB</option><option value="512">512 MB</option><option value="1024">1 GB</option><option value="2048">2 GB</option></select></label>
     <p class="muted" id="saved" aria-live="polite"></p><label>额外 CDN 候选（每行一个）</label><textarea id="extras" placeholder="cn-hk-eq-01-04.bilivideo.com"></textarea></details>

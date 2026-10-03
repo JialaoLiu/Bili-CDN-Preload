@@ -1,3 +1,17 @@
+# v1.0.9 beta.3 (source trial, not released)
+
+- Total VOD transfer concurrency choices are now 3 / 6 / 8 / 12, default 6; remove the old six-transfer runtime clamp. Existing 3/6/8/12 choices are preserved; removed 1/2/4 choices become 6. Parallel playback remains enabled by default, with automatic preference saving.
+- Windows Edge live checks confirmed cache hits in a room with 2–3 viewers, but buffer depth and duplicate requests still need improvement. After the user enabled HDR output, both supplied VOD samples selected HDR/HEVC and produced cache hits; the low-view long-video sample showed about 3.4–5.0 MB/s during one 30-second capture with no failed requests or HTTP 429. Higher concurrency performance has not yet been measured.
+
+- External Edge inspection of live room 1890519304 found bare relative playlist URLs while player requests inherited the playlist signature, causing zero cache hits. Relative segment/init URLs now inherit that query; explicit queries remain unchanged. Added signed-playlist browser regression.
+- Default to mainland-first and enable parallel playback with a one-time settings migration; later changes remain saved. Live selection also prefers validated mainland hosts, with original-node fallback when mainland candidates cannot serve the signed stream.
+- Reset a track's shared cache pool with its cache when switching qualities. Display the active video quality/codec, including HDR/HEVC. HDR metadata/byte-path tests do not validate HDR display output: the external Edge sample exposed a server HDR track but reported no active HDR display and selected ordinary 4K.
+
+- Add a separate live.bilibili.com module for recognized, unencrypted fMP4 HLS playlists. Prefetch only already-announced segments (roughly eight seconds, segment-aligned), share Fetch/XHR cache entries, and cap transfers at four with two background prefetch jobs. A delayed request may use one backup copy; cancel the loser.
+- Probe live-specific CDN candidates with 2 KiB samples before use. Repeated failures exclude a CDN for the current stream; failed acceleration falls back to the original request. VOD CDN presets are not used for live media.
+- Optional direct-CDN preference suppresses known live P2P SDK entry points. Separate live enable/prefetch/direct settings and bilingual panel; FLV, encrypted, byte-range and unrecognized formats stay native. Worker-only requests are not intercepted.
+- 38 unit tests and mocked live/HDR browser integrations passed. Current live/HDR changes have no fresh macOS validation. The live design and candidate hosts were informed by Bilibili-thread-ripper (cf4b2047aaba5103380d33e59854977900d0bef9); implementation is separate.
+
 # v1.0.8 beta (prerelease)
 
 - beta.7: English / Simplified Chinese panel with an autosaved **EN / 中** switch. Translates settings, live status, scan results, validation messages and accessibility labels without restarting downloads. Bilingual release notes and installation instructions.

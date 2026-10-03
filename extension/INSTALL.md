@@ -1,4 +1,10 @@
-# Bili CDN & Preload — v1.0.8 beta.7
+# Bili CDN & Preload — v1.0.9 beta.3 (local trial / 本地测试版)
+
+## Live-stream trial / 直播测试
+
+On a numeric Bilibili live-room page, open **Bili CDN & Preload · Live**. Live acceleration, announced-segment prefetch and direct-CDN preference have separate switches. Only recognized, unencrypted fMP4 HLS Fetch/XHR streams are supported; FLV, byte-range, encrypted and worker-only requests stay native. Reload after changing the P2P setting to fully apply it. No five-minute future-live preload is possible. Real low-viewer-room performance remains unverified.
+
+在 B 站直播间点击 **Bili CDN & Preload · Live**。直播加速、预取已生成分片、优先直连 CDN 各有独立开关。仅支持已识别且未加密的 fMP4 HLS Fetch/XHR 流；FLV、字节范围、加密以及 Worker 内部请求沿用原生播放。修改 P2P 选项后刷新页面才能完全生效。直播无法提前下载未来五分钟的内容，真实低人气直播间效果尚待验证。
 
 ## English
 

@@ -2,6 +2,22 @@
   'use strict';
   // Presentation only: canonical status/errors stay unchanged in the downloader.
   const messages={
+    '当前视频轨道':'Active video track',
+    'HDR 真彩':'HDR',
+    '直播加速面板':'Live acceleration controls',
+    '直播加速':'Live acceleration',
+    '预取已生成的直播分片':'Prefetch available live segments',
+    '优先直连 CDN（避开 P2P）':'Prefer direct CDN (avoid P2P)',
+    '直播只预取已生成的分片，不会提前下载未来五分钟。FLV、加密及暂未识别的流沿用原生播放器。':'Only already-produced segments are prefetched, not five minutes of future live video. FLV, encrypted and unrecognized streams stay with the native player.',
+    '直播分片无数据':'No incoming live segment data',
+    '直播分片超时':'Live segment timed out',
+    '直播分片范围不匹配':'Live segment range mismatch',
+    '直播分片超过大小限制':'Live segment exceeds size limit',
+    '直播分片为空':'Empty live segment',
+    '直播分片不完整':'Incomplete live segment',
+    '直播分片格式不支持':'Unsupported live segment format',
+    '当前直播没有可用 CDN':'No available CDN for this live stream',
+    '直播分片不在当前列表中':'Segment is not in the current live playlist',
     '五分钟缓存控制面板':'Preload controls',
     '收起面板':'Close panel',
     '提前预加载':'Preload ahead',

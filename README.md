@@ -9,7 +9,7 @@ Smoother Bilibili playback overseas with adaptive CDN selection and proactive vi
 - **Preload ahead:** choose Bilibili's default buffering or up to 5 minutes ahead; default is 5 minutes.
 - **English / 中文:** switch with **EN / 中** in the panel header; your choice is saved.
 - **Adapt before stalls:** explore alternative CDNs when buffer headroom or growth is low.
-- **Download in parallel:** separate audio/video caching, adjustable concurrency and memory limits, saved automatically.
+- **Download in parallel:** VOD transfer limits of 3 / 6 / 8 / 12, default 6. Parallel playback is enabled and mainland CDNs preferred by default; settings save automatically.
 - **See real results:** live download speed, continuous cache coverage, and player cache hits.
 
 ## Install
@@ -35,10 +35,16 @@ No telemetry or remote backend. Settings stay in localStorage. The beta uses pag
 
 ## Development
 
+### Live-stream source trial (v1.0.9 beta.3)
+
+The source adds separate controls on `live.bilibili.com` for recognized fMP4 HLS streams: short announced-segment prefetch, shared Fetch/XHR downloads, bounded backup-CDN requests, and optional direct-CDN preference over known P2P SDKs. It preserves the native player and chat. Live segments cannot be downloaded before the broadcaster produces them; the VOD five-minute slider does not apply.
+
+FLV, encrypted, byte-range, unrecognized and worker-only streams are not accelerated. Windows Edge checks confirmed live cache hits in a room with 2–3 viewers; thin buffers and repeated segment requests remain. Real HDR/HEVC playback was also checked on the VOD path. These limited checks do not establish performance at 8 or 12 transfers. Candidate hosts and design were informed by [Bilibili-thread-ripper](https://github.com/MrTangLuyao/Bilibili-thread-ripper). The source trial is not included in the beta.7 release above.
+
 No build step. Load `extension/` directly. Run tests with Node.js 20+:
 
 ```sh
-node --test tests/core.test.cjs tests/adaptive.test.cjs tests/i18n.test.cjs
+node --test tests/core.test.cjs tests/adaptive.test.cjs tests/i18n.test.cjs tests/live.test.cjs
 ```
 
 [Report an issue](https://github.com/JialaoLiu/Bili-CDN-Preload/issues) with your browser, region, video link, quality, and a screenshot of the cache panel.

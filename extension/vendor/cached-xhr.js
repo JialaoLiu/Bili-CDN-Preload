@@ -220,7 +220,7 @@
         this._sent = true;
         const range = this._headers.find(([name]) => name.toLowerCase() === "range")?.[1] || "";
         let plan = null;
-        if (this._async && this._method.toUpperCase() === "GET" && range && this._responseType === "arraybuffer") {
+        if (this._async && this._method.toUpperCase() === "GET" && (range || options?.resolveWithoutRange === true) && this._responseType === "arraybuffer") {
           try {
             this._pendingController = new AbortController();
             plan = resolveCachedRequest({
@@ -230,6 +230,7 @@
               responseType: this._responseType,
               url: this._url,
               withCredentials: this._withCredentials,
+              timeout: this._timeout,
               signal: this._pendingController.signal
             });
           } catch {
