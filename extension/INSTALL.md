@@ -1,10 +1,10 @@
-# Bili CDN & Preload — v1.0.9 beta.3 (local trial / 本地测试版)
+# Bili CDN & Preload — v1.0.9
 
-## Live-stream trial / 直播测试
+## Live streams / 直播
 
-On a numeric Bilibili live-room page, open **Bili CDN & Preload · Live**. Live acceleration, announced-segment prefetch and direct-CDN preference have separate switches. Only recognized, unencrypted fMP4 HLS Fetch/XHR streams are supported; FLV, byte-range, encrypted and worker-only requests stay native. Reload after changing the P2P setting to fully apply it. No five-minute future-live preload is possible. Real low-viewer-room performance remains unverified.
+On a numeric Bilibili live-room page, open **Bili CDN & Preload · Live**. Live acceleration, announced-segment prefetch and direct-CDN preference have separate switches. Only recognized, unencrypted fMP4 HLS Fetch/XHR streams are supported; FLV, byte-range, encrypted and worker-only requests stay native. Reload after changing the P2P setting to fully apply it. Live buffering is limited to content already produced by the broadcaster. Low-viewer-room checks confirmed cache hits, while thin buffers and duplicate requests remain.
 
-在 B 站直播间点击 **Bili CDN & Preload · Live**。直播加速、预取已生成分片、优先直连 CDN 各有独立开关。仅支持已识别且未加密的 fMP4 HLS Fetch/XHR 流；FLV、字节范围、加密以及 Worker 内部请求沿用原生播放。修改 P2P 选项后刷新页面才能完全生效。直播无法提前下载未来五分钟的内容，真实低人气直播间效果尚待验证。
+在 B 站直播间点击 **Bili CDN & Preload · Live**。直播加速、预取已生成分片、优先直连 CDN 各有独立开关。仅支持已识别且未加密的 fMP4 HLS Fetch/XHR 流；FLV、字节范围、加密以及 Worker 内部请求沿用原生播放。修改 P2P 选项后刷新页面才能完全生效。直播只能缓存主播已经生成的内容；低人气房间已确认缓存命中，但仍有低缓冲和重复请求。
 
 ## English
 
@@ -15,7 +15,7 @@ On a numeric Bilibili live-room page, open **Bili CDN & Preload · Live**. Live 
 
 Drag the preload slider freely and release to snap to 30-second steps. Far left disables extra prefetch, not Bilibili's own buffering. The default is five minutes. Changing the target or language does not restart playback or discard cached future data.
 
-For updates, replace the files in your existing extension folder, reload the extension, and refresh video tabs. This beta is not a guarantee of stall-free playback. Earlier versions received user macOS validation; this build has automated browser checks, not a fresh macOS performance test.
+For updates, replace the files in your existing extension folder, reload the extension, and refresh video tabs. VOD transfer choices are 3 / 6 / 8 / 12, default 6; parallel playback is enabled and mainland CDNs preferred by default. Windows Edge live and HDR/HEVC playback were checked. Earlier versions received user macOS validation; this version has no fresh macOS performance test.
 
 ## 简体中文
 
@@ -26,4 +26,4 @@ For updates, replace the files in your existing extension folder, reload the ext
 
 预加载滑条可以自由拖动，松手吸附到最近的 30 秒档位。最左侧关闭额外预取，仍保留 B 站自身缓冲；默认提前五分钟。调整时长或语言不会重启播放，也不会丢弃已缓存的后续数据。
 
-更新时替换原扩展目录中的文件，重新加载扩展并刷新视频页面。测试版不保证所有视频都不卡顿。旧版已有用户 macOS 验证，本次版本通过自动化浏览器检查，尚无新的 macOS 性能实测。
+更新时替换原扩展目录中的文件，重新加载扩展并刷新视频页面。点播总并发可选 3 / 6 / 8 / 12，默认 6；播放请求并行默认勾选，线路默认大陆优先。Windows Edge 已检查直播与真实 HDR/HEVC 播放；旧版已有用户 macOS 验证，本版尚无新的 macOS 性能实测。

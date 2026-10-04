@@ -1,4 +1,6 @@
-# v1.0.9 beta.3 (source trial, not released)
+# v1.0.9
+
+- Publish as a normal GitHub Release with a Windows/macOS Chrome/Edge ZIP and bilingual notes. Version labels now show 1.0.9 without a beta suffix.
 
 - Total VOD transfer concurrency choices are now 3 / 6 / 8 / 12, default 6; remove the old six-transfer runtime clamp. Existing 3/6/8/12 choices are preserved; removed 1/2/4 choices become 6. Parallel playback remains enabled by default, with automatic preference saving.
 - Windows Edge live checks confirmed cache hits in a room with 2–3 viewers, but buffer depth and duplicate requests still need improvement. After the user enabled HDR output, both supplied VOD samples selected HDR/HEVC and produced cache hits; the low-view long-video sample showed about 3.4–5.0 MB/s during one 30-second capture with no failed requests or HTTP 429. Higher concurrency performance has not yet been measured.

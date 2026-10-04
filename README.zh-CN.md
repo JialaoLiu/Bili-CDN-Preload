@@ -16,7 +16,7 @@
 
 **[下载最新版本](https://github.com/JialaoLiu/Bili-CDN-Preload/releases/latest)** — Windows/macOS 的 Chrome、Edge 使用同一个 ZIP。
 
-**[体验 v1.0.8 beta.7](https://github.com/JialaoLiu/Bili-CDN-Preload/releases/tag/v1.0.8-beta.7)**：双语面板、可调预加载与共享下载。
+**1.0.9 正式版**包含双语面板、可调预加载、共享下载和直播独立设置。
 
 1. 解压 ZIP，保留解压后的文件夹。
 2. 打开 `chrome://extensions` 或 `edge://extensions`，开启「开发者模式」。
@@ -31,15 +31,15 @@ Windows 已实测，macOS 已通过用户实测验证，两个平台使用同一
 
 适用于桌面 B 站 DASH 点播，实际效果取决于 CDN 带宽与账号访问权限。不是 VPN，也不提供地区解锁。
 
-无遥测、无远端后台。设置保存在 localStorage。测试版使用页面内存和本地 IndexedDB 缓存（最多 128 MiB、30 分钟过期）恢复刷新前的数据，默认内存预算为 1 GiB。
+无遥测、无远端后台。设置保存在 localStorage。视频使用页面内存和本地 IndexedDB 缓存（最多 128 MiB、30 分钟过期）恢复刷新前的数据，默认内存预算为 1 GiB。
 
 ## 开发与反馈
 
-### 直播源码测试版（v1.0.9 beta.3）
+### 直播支持
 
 源码新增 `live.bilibili.com` 独立模块：对已识别的 fMP4 HLS 直播预取已生成的分片，Fetch/XHR 共用缓存，慢请求有限尝试备用 CDN，并可选择避开已知 P2P SDK。保留 B 站原生播放器和弹幕。直播不能下载主播尚未播出的内容，不使用点播的五分钟滑条。
 
-FLV、加密、字节范围、未识别及仅在 Worker 中发出的流不接管。Windows Edge 实测确认 2～3 位观众的直播间已有缓存命中，但仍有低缓冲和重复分片请求；点播也已验证实际 HDR/HEVC 播放。这些有限测试尚不能证明 8、12 并发的性能。设计和候选节点参考 [Bilibili-thread-ripper](https://github.com/MrTangLuyao/Bilibili-thread-ripper)。上面的 beta.7 Release 尚不包含直播模块。
+FLV、加密、字节范围、未识别及仅在 Worker 中发出的流不接管。Windows Edge 实测确认 2～3 位观众的直播间已有缓存命中，但仍有低缓冲和重复分片请求；点播也已验证实际 HDR/HEVC 播放。这些有限测试尚不能证明 8、12 并发的性能。设计和候选节点参考 [Bilibili-thread-ripper](https://github.com/MrTangLuyao/Bilibili-thread-ripper)。
 
 无需构建，直接加载 `extension/`。Node.js 20+ 可运行测试：
 

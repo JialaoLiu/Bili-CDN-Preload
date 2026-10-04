@@ -16,14 +16,14 @@ Smoother Bilibili playback overseas with adaptive CDN selection and proactive vi
 
 **[Download the latest release](https://github.com/JialaoLiu/Bili-CDN-Preload/releases/latest)** — one ZIP for Chrome and Edge on Windows and macOS.
 
-**[Try v1.0.8 beta.7](https://github.com/JialaoLiu/Bili-CDN-Preload/releases/tag/v1.0.8-beta.7)** for the bilingual panel, adjustable preload and shared downloads.
+Version **1.0.9** includes the bilingual panel, adjustable preload, shared downloads and live-stream controls.
 
 1. Extract the ZIP and keep the folder.
 2. Open `chrome://extensions` or `edge://extensions`, then enable **Developer mode**.
 3. Click **Load unpacked** and select the folder directly containing `manifest.json`.
 4. Disable conflicting Bilibili CDN scripts/extensions, refresh your video, and click **Bili CDN & Preload** in the bottom-right corner.
 
-To update, replace the files, reload the extension, and refresh Bilibili. No automatic updates. The beta panel supports English and Simplified Chinese.
+To update, replace the files, reload the extension, and refresh Bilibili. No automatic updates. The panel supports English and Simplified Chinese.
 
 ## Compatibility & privacy
 
@@ -31,15 +31,15 @@ Windows tested; macOS verified through user testing. Both platforms use the same
 
 Designed for desktop Bilibili DASH videos. Playback still depends on available CDN bandwidth and your account's access. No VPN or region unlocking.
 
-No telemetry or remote backend. Settings stay in localStorage. The beta uses page memory plus a local IndexedDB cache (up to 128 MiB, 30-minute expiry) for refresh recovery. Default memory budget: 1 GiB.
+No telemetry or remote backend. Settings stay in localStorage. Media uses page memory plus a local IndexedDB cache (up to 128 MiB, 30-minute expiry) for refresh recovery. Default memory budget: 1 GiB.
 
 ## Development
 
-### Live-stream source trial (v1.0.9 beta.3)
+### Live streams
 
 The source adds separate controls on `live.bilibili.com` for recognized fMP4 HLS streams: short announced-segment prefetch, shared Fetch/XHR downloads, bounded backup-CDN requests, and optional direct-CDN preference over known P2P SDKs. It preserves the native player and chat. Live segments cannot be downloaded before the broadcaster produces them; the VOD five-minute slider does not apply.
 
-FLV, encrypted, byte-range, unrecognized and worker-only streams are not accelerated. Windows Edge checks confirmed live cache hits in a room with 2–3 viewers; thin buffers and repeated segment requests remain. Real HDR/HEVC playback was also checked on the VOD path. These limited checks do not establish performance at 8 or 12 transfers. Candidate hosts and design were informed by [Bilibili-thread-ripper](https://github.com/MrTangLuyao/Bilibili-thread-ripper). The source trial is not included in the beta.7 release above.
+FLV, encrypted, byte-range, unrecognized and worker-only streams are not accelerated. Windows Edge checks confirmed live cache hits in a room with 2–3 viewers; thin buffers and repeated segment requests remain. Real HDR/HEVC playback was also checked on the VOD path. These limited checks do not establish performance at 8 or 12 transfers. Candidate hosts and design were informed by [Bilibili-thread-ripper](https://github.com/MrTangLuyao/Bilibili-thread-ripper).
 
 No build step. Load `extension/` directly. Run tests with Node.js 20+:
 
